@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cmatrix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: black;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        (function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const FONT_SIZE = 20;
+            const BASE_HUE = 270;
+            const MIN_LIGHT = 15;
+            const MAX_LIGHT = 85;
+            const TAIL_MIN = 8;
+            const TAIL_MAX = 24;
+            const SPEED_MIN = 1.2;
+            const SPEED_MAX = 2.8;
+            const SYMBOLS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&?+=*";
+
+            let cols = [];
+            let width, height;
+            let charWidth;
+
+            function init() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                ctx.font = `${FONT_SIZE}px monospace`;
+                ctx.textBaseline = 'top';
+                charWidth = ctx.measureText('A').width;
+                const colCount = Math.max(1, Math.floor(width / charWidth));
+                cols = [];
+                for (let i = 0; i < colCount; i++) {
+                    const tail = Math.floor(Math.random() * (TAIL_MAX - TAIL_MIN + 1)) + TAIL_MIN;
+                    const speed = Math.random() * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
+                    const headY = Math.random() * (height + tail * FONT_SIZE) - tail * FONT_SIZE;
+                    const chars = [];
+                    for (let j = 0; j < tail; j++) {
+                        chars.push(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
+                    }
+                    cols.push({ headY, speed, tail, chars });
+                }
+            }
+
+            function update() {
+                for (let col of cols) {
+                    col.headY += col.speed;
+                    if (col.headY > height + col.tail * FONT_SIZE) {
+                        col.headY = -col.tail * FONT_SIZE;
+                    }
+                    for (let i = 0; i < col.tail; i++) {
+                        if (Math.random() < 0.02) {
+                            col.chars[i] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                        }
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, width, height);
+                cols.forEach((col, colIndex) => {
+                    const x = colIndex * charWidth;
+                    for (let i = 0; i < col.tail; i++) {
+                        const y = col.headY - i * FONT_SIZE;
+                        if (y >= 0 && y < height) {
+                            const lightness = MIN_LIGHT + (MAX_LIGHT - MIN_LIGHT) * (i / (col.tail - 1 || 1));
+                            ctx.fillStyle = `hsl(${BASE_HUE}, 100%, ${lightness}%)`;
+                            ctx.fillText(col.chars[i], x, y);
+                        }
+                    }
+                });
+            }
+
+            function animate() {
+                update();
+                draw();
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', () => {
+                init();
+            });
+
+            init();
+            animate();
+        })();
+    </script>
+</body>
+</html>
